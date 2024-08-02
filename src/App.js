@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { nanoid } from "nanoid";
 
 function App() {
   const [searchList, setSearchList] = useState([]);
@@ -36,6 +37,8 @@ function App() {
     function () {
       async function fetchContinent() {
         try {
+          setRandomList([]);
+          setSearchList([]);
           const res = await fetch(
             `https://restcountries.com/v3.1/region/${continent}`
           );
@@ -73,6 +76,9 @@ function App() {
 
       async function fetchCountryList() {
         try {
+          setContinentList([]);
+          setRandomList([]);
+          setContinent("");
           const res = await fetch(
             `https://restcountries.com/v3.1/name/${searchValue}`,
             { signal: controller.signal }
@@ -187,17 +193,18 @@ function TextBoxOption({
           />
         </div>
         <select
+          value={continent} // Set the value to the current continent state
           onChange={(e) => setContinent(e.target.value)}
           className="border-2 border-gray-300 rounded-lg p-2 bg-white text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-300 transition-all"
         >
-          <option value="" disabled selected>
+          <option value="" disabled>
             Select a continent
           </option>
           <option value="africa">Africa</option>
           <option value="america">America</option>
           <option value="asia">Asia</option>
           <option value="europe">Europe</option>
-          <option value="ocenia">Oceania</option>
+          <option value="oceania">Oceania</option>
         </select>
       </div>
     </div>
@@ -226,7 +233,7 @@ function NationalCardsBox({
             {searchList.length > 0
               ? searchList.map((el) => (
                   <NationalCards
-                    key={el.name.common}
+                    key={nanoid()} // Use nanoid for unique keys
                     onClick={handleClick}
                     nation={el}
                   />
@@ -234,14 +241,14 @@ function NationalCardsBox({
               : continentList.length > 0
               ? continentList.map((el) => (
                   <NationalCards
-                    key={el.name.common}
+                    key={nanoid()}
                     onClick={handleClick}
                     nation={el}
                   />
                 ))
               : randomList.map((el) => (
                   <NationalCards
-                    key={el.name.common}
+                    key={nanoid()}
                     onClick={handleClick}
                     nation={el}
                   />
