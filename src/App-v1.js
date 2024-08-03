@@ -1,38 +1,137 @@
-import { useState, useEffect } from "react";
-import { useContinent } from "./useContinent";
-import { useRandomCountries } from "./useRandomCountries";
-import { useCountryDetails } from "./useCountryDetails";
-import { useSearch } from "./useSearch";
+import { useEffect, useState } from "react";
 import { nanoid } from "nanoid";
 
 function App() {
+  const [searchList, setSearchList] = useState([]);
   const [searchValue, setSearchValue] = useState("");
+  const [randomList, setRandomList] = useState([]);
+  const [curCountry, setCurCountry] = useState(null);
   const [continent, setContinent] = useState("");
-  const { continentList, setContinentList } = useContinent(continent);
-  const { randomList, setRandomList } = useRandomCountries();
-  const { curCountry, fetchSingleCountry, setCurCountry } = useCountryDetails();
-  const { searchList, setSearchList } = useSearch(searchValue, () => {
-    setContinentList([]);
-    setRandomList([]);
-    setContinent("");
-  });
-
-  useEffect(() => {
-    if (continent) {
-      setSearchList([]);
-      setRandomList([]);
-    }
-  }, [continent]);
+  const [continentList, setContinentList] = useState([]);
 
   function handleBack() {
     setCurCountry(null);
   }
 
   function handleClick(name) {
+    let country;
+    async function fetchSingleCountry(name) {
+      try {
+        const res = await fetch(`https://restcountries.com/v3.1/name/${name}`);
+        if (!res.ok) throw new Error(res.message);
+
+        const data = await res.json();
+
+        country = data[0];
+        setCurCountry(country);
+      } catch (error) {
+        console.log(error.message);
+      }
+    }
     if (name) {
       fetchSingleCountry(name);
     }
   }
+
+  useEffect(
+    function () {
+      async function fetchContinent() {
+        try {
+          setRandomList([]);
+          setSearchList([]);
+          const res = await fetch(
+            `https://restcountries.com/v3.1/region/${continent}`
+          );
+
+          if (!res.ok) throw new Error("Something went wrong");
+
+          const data = await res.json();
+
+          let contList = [];
+
+          while (contList.length < 8) {
+            const randNum = Math.trunc(Math.random() * data.length);
+            contList.push(data[randNum]);
+          }
+
+          setSearchList([]);
+          setSearchValue("");
+
+          setContinentList(contList);
+        } catch (error) {
+          console.log(error.message);
+        }
+      }
+
+      if (continent) {
+        fetchContinent();
+      }
+    },
+    [continent]
+  );
+
+  useEffect(
+    function () {
+      const controller = new AbortController();
+
+      async function fetchCountryList() {
+        try {
+          setContinentList([]);
+          setRandomList([]);
+          setContinent("");
+          const res = await fetch(
+            `https://restcountries.com/v3.1/name/${searchValue}`,
+            { signal: controller.signal }
+          );
+
+          if (!res.ok) throw new Error("Something went wrong");
+
+          const data = await res.json();
+          if (data !== null) {
+            setSearchList(data);
+          }
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            console.log(error.message);
+          }
+        }
+      }
+
+      if (searchValue) {
+        fetchCountryList();
+      }
+
+      return function () {
+        controller.abort();
+      };
+    },
+    [searchValue]
+  );
+
+  useEffect(function () {
+    async function fetchAllCountrysData() {
+      try {
+        const res = await fetch("https://restcountries.com/v3.1/all");
+
+        if (!res.ok) throw new Error("Something went wrong");
+
+        const data = await res.json();
+        let selectedCountries = [];
+
+        while (selectedCountries.length < 8) {
+          const randNum = Math.trunc(Math.random() * 250);
+
+          selectedCountries.push(data[randNum]);
+        }
+
+        setRandomList(selectedCountries);
+      } catch (error) {
+        console.log(error.message);
+      }
+    }
+
+    fetchAllCountrysData();
+  }, []);
 
   return (
     <div className="w-full h-full bg-gray-50">
